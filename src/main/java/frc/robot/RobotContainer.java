@@ -8,8 +8,11 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+
 import frc.robot.LimelightHelpers;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -25,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.LimelightHelpers.RawFiducial;
 import frc.robot.commands.swervedrive.drivebase.AbsoluteDriveAdv;
+import frc.robot.subsystems.swervedrive.LimeLightExtra;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
 import swervelib.SwerveInputStream;
@@ -38,9 +42,9 @@ public class RobotContainer
 {
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
-  final         CommandXboxController driverXbox = new CommandXboxController(0);
+  final CommandXboxController driverXbox = new CommandXboxController(0);
   // The robot's subsystems and commands are defined here...
-  private final SwerveSubsystem       drivebase  = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
+  private SwerveSubsystem drivebase  = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
                                                                                 "swerve"));
   // Applies deadbands and inverts controls because joysticks
   // are back-right positive while robot
@@ -145,6 +149,7 @@ public class RobotContainer
                                 driveFieldOrientedAnglularVelocity :
                                 driveFieldOrientedAnglularVelocitySim);
 
+    // drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
     if (Robot.isSimulation())
     {
       driverXbox.start().onTrue(Commands.runOnce(() -> drivebase.resetOdometry(new Pose2d(3, 3, new Rotation2d()))));
@@ -167,22 +172,36 @@ public class RobotContainer
       driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
       driverXbox.b().whileTrue(
           drivebase.driveToPose(
-              new Pose2d(new Translation2d(4, 4), Rotation2d.fromDegrees(0)))
-                              );
+              new Pose2d(new Translation2d(0, 0.1), Rotation2d.fromDegrees(270))));
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+      driverXbox.leftBumper().onTrue(new InstantCommand(()->System.out.println("ur mom")
+        //Commands.runOnce(drivebase::lock, drivebase).repeatedly()
+      ));
       driverXbox.a().onTrue(new InstantCommand(()->{
-        RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("");
-        System.out.println(LimelightHelpers.getTV("limelight"));
-        
-        for (RawFiducial x : gFiducials) {
+        // if (LimelightHelpers.getTV("null")) {
+        //   System.out.println(drivebase.aprilTagFieldLayout);
+        //   double angleToTurn = LimelightHelpers.getTX(null);
+        // }
 
-          System.out.println(x.id);
-    
-        }
+        // System.out.println(LimelightHelpers.getTV(LimeLightExtra.backCam));
+      
+        drivebase.aimAtTarget(LimeLightExtra.backCam);
+        // RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("")   
       }));
+      
+      driverXbox.y().onTrue(new InstantCommand(
+      ()-> {
+
+        new PathPlannerAuto("pathdaneil").schedule();
+        
+      }
+
+      ));
+
+
     }
+    
 
   }
 
@@ -193,6 +212,9 @@ public class RobotContainer
    */
   public Command getAutonomousCommand()
   {
+    // drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
+    // "swerve"));
+
     return new PathPlannerAuto("Auto_1");
     
   }

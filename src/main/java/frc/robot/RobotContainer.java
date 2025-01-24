@@ -170,14 +170,21 @@ public class RobotContainer
     {
       // driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
-      driverXbox.b().whileTrue(
-          drivebase.driveToPose(
-              new Pose2d(new Translation2d(0, 0.1), Rotation2d.fromDegrees(270))));
+      driverXbox.b().onTrue(
+        new InstantCommand(() ->{
+          drivebase.OnTheFlyPathPlan().schedule();
+
+        }
+      ));
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().onTrue(new InstantCommand(()->System.out.println("ur mom")
-        //Commands.runOnce(drivebase::lock, drivebase).repeatedly()
-      ));
+      driverXbox.leftBumper().onTrue(
+        new InstantCommand(() -> {
+          System.out.println(drivebase.getPose().getX());
+          //Commands.runOnce(drivebase::lock, drivebase).repeatedly()
+        })
+       
+      );
       driverXbox.a().onTrue(new InstantCommand(()->{
         // if (LimelightHelpers.getTV("null")) {
         //   System.out.println(drivebase.aprilTagFieldLayout);
@@ -190,16 +197,9 @@ public class RobotContainer
         // RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("")   
       }));
       
-      driverXbox.y().onTrue(new InstantCommand(
-      ()-> {
-
-        new PathPlannerAuto("pathdaneil").schedule();
-        
-      }
-
-      ));
-
-
+      driverXbox.y().onTrue(
+        Commands.runOnce(drivebase::zeroGyro)
+      );
     }
     
 
@@ -222,5 +222,9 @@ public class RobotContainer
   public void setMotorBrake(boolean brake)
   {
     drivebase.setMotorBrake(brake);
+  }
+  public void periodic(){
+    System.out.println(drivebase.getPose().getX() + "This is X");
+    System.out.println(drivebase.getPose().getY() + "This is Y");
   }
 }

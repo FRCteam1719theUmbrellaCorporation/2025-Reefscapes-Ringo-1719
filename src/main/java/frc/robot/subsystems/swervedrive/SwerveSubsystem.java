@@ -12,8 +12,10 @@ import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
@@ -33,6 +35,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import frc.robot.Constants;
@@ -42,6 +45,7 @@ import frc.robot.LimelightHelpers.RawFiducial;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.DoubleSupplier;
@@ -148,6 +152,7 @@ public class SwerveSubsystem extends SubsystemBase
     {
       swerveDrive.updateOdometry();
 //      vision.updatePoseEstimation(swerveDrive);
+
     }
   }
 
@@ -668,6 +673,33 @@ public Command aimAtTarget(String limeLightName)
                                                         Constants.MAX_SPEED);
   }
 
+  
+  public Command OnTheFlyPathPlan()
+  {
+    Pose2d currentPos = getPose();
+    final double posx = currentPos.getX();
+    final double posy = currentPos.getY();
+      // Create a list of waypoints from poses. Each pose represents one waypoint.
+  // The rotation component of the pose should be the direction of travel. Do not use holonomic rotation.
+  List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+    currentPos,
+    new Pose2d(posx+1, posy+1, Rotation2d.fromDegrees(0))
+);
+
+PathConstraints constraints = new PathConstraints(1.0, 1.0, 2*Math.PI, 4*Math.PI); // The constraints for this path.
+// PathConstraints constraints = PathConstraints.unlimitedConstraints(12.0); // You can also use unlimited constraints, only limited by motor torque and nominal battery voltage
+
+// Create the path using the waypoints created above
+PathPlannerPath path = new PathPlannerPath(
+    waypoints,
+    constraints,
+    null, // The ideal starting state, this is only relevant for pre-planned paths, so can be null for on-the-fly paths.
+    new GoalEndState(0.0, Rotation2d.fromDegrees(0)) // Goal end state. You can set a holonomic rotation here. If using a differential drivetrain, the rotation will have no effect. 
+);
+  return AutoBuilder.followPath(path);
+  
+  }
+
   /**
    * Gets the current field-relative velocity (x, y and omega) of the robot
    *
@@ -743,4 +775,4 @@ public Command aimAtTarget(String limeLightName)
   {
     return swerveDrive;
   }
-}
+  }

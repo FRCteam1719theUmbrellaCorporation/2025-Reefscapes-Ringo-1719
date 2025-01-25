@@ -37,8 +37,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import frc.robot.Constants;
+import frc.robot.LimelightHelpers;
 import frc.robot.LimelightHelpers.RawFiducial;
 
 //import frc.robot.subsystems.swervedrive.Vision.Cameras;
@@ -148,10 +150,11 @@ public class SwerveSubsystem extends SubsystemBase
   public void periodic()
   {
     // When vision is enabled we must manually update odometry in SwerveDrive
-    if (visionDriveTest)
+    if (true)
     {
       swerveDrive.updateOdometry();
-//      vision.updatePoseEstimation(swerveDrive);
+      LimeLightExtra.updatePoseEstimation(swerveDrive);
+      System.out.println(LimelightHelpers.toPose2D(LimelightHelpers.getTargetPose_RobotSpace(LimeLightExtra.backCam)));
 
     }
   }
@@ -674,7 +677,7 @@ public Command aimAtTarget(String limeLightName)
   }
 
   
-  public Command OnTheFlyPathPlan()
+  public Command OnTheFlyPathPlan(double xx, double yy, double angle)
   {
     Pose2d currentPos = getPose();
     final double posx = currentPos.getX();
@@ -683,10 +686,12 @@ public Command aimAtTarget(String limeLightName)
   // The rotation component of the pose should be the direction of travel. Do not use holonomic rotation.
   List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
     currentPos,
-    new Pose2d(posx+1, posy+1, Rotation2d.fromDegrees(0))
+    new Pose2d(posx+xx, posy+yy, Rotation2d.fromDegrees(angle))
+    //new Pose2d(posx-1, posy, Rotation2d.fromDegrees(0)),
+    //new Pose2d(posx, posy+1, Rotation2d.fromDegrees(0)),
 );
 
-PathConstraints constraints = new PathConstraints(1.0, 1.0, 2*Math.PI, 4*Math.PI); // The constraints for this path.
+PathConstraints constraints = new PathConstraints(1.0, 1.0, 2*Math.PI, 2*Math.PI); // The constraints for this path.
 // PathConstraints constraints = PathConstraints.unlimitedConstraints(12.0); // You can also use unlimited constraints, only limited by motor torque and nominal battery voltage
 
 // Create the path using the waypoints created above

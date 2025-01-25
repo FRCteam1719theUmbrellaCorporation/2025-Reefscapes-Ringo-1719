@@ -1,8 +1,11 @@
 package frc.robot.subsystems.swervedrive;
 import java.util.Optional;
 
+import edu.wpi.first.math.VecBuilder;
 import frc.robot.LimelightHelpers;
 import frc.robot.LimelightHelpers.RawFiducial;
+import swervelib.SwerveDrive;
+import swervelib.telemetry.SwerveDriveTelemetry;
 
 public class LimeLightExtra {
 
@@ -29,5 +32,36 @@ public class LimeLightExtra {
 
         System.out.println(bestResult.id);
         return Optional.of(bestResult);
+    }
+
+
+    public static void updatePoseEstimation(SwerveDrive swerveDrive) {
+        LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(backCam);
+        boolean doRejectUpdate = false;
+
+        if(mt1.tagCount == 1 && mt1.rawFiducials.length == 1)
+        {
+            if(mt1.rawFiducials[0].ambiguity > .7)
+            {
+            doRejectUpdate = true;
+            }
+            if(mt1.rawFiducials[0].distToCamera > 3)
+            {
+            doRejectUpdate = true;
+            }
+        }
+        if(mt1.tagCount == 0)
+        {
+            doRejectUpdate = true;
+        }
+
+        if(!doRejectUpdate)
+        {
+            swerveDrive.setVisionMeasurementStdDevs(VecBuilder.fill(.5,.5,9999999));
+            swerveDrive.addVisionMeasurement(
+                mt1.pose,
+                mt1.timestampSeconds);
+        }
+
     }
 }

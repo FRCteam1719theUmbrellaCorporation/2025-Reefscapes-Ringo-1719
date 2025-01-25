@@ -889,8 +889,6 @@ public class LimelightHelpers {
         }
         return null;
     }
-    /////
-    /////
 
     /**
      * Does the Limelight have a valid target?

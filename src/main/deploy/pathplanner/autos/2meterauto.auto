@@ -5,9 +5,15 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "center"
+          }
+        },
+        {
           "type": "path",
           "data": {
-            "pathName": "Path1"
+            "pathName": "PATHTEST"
           }
         }
       ]

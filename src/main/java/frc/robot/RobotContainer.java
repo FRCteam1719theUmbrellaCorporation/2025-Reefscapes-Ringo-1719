@@ -129,10 +129,12 @@ public class RobotContainer
    */
   public RobotContainer()
   {
+    NamedCommands.registerCommand("center", drivebase.centerModulesCommand().withTimeout(0.5));
     // Configure the trigger bindings
     configureBindings();
     DriverStation.silenceJoystickConnectionWarning(true);
-    NamedCommands.registerCommand("test", Commands.print("I EXIST"));
+    
+    //NamedCommands.registerCommand("test", Commands.print("I EXIST"));
   }
 
   /**
@@ -170,9 +172,9 @@ public class RobotContainer
     {
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       
-      driverXbox.x().onTrue(new InstantCommand(() -> {
-        LimeLightExtra.printTargetSpace(LimeLightExtra.backCam);
-      }));
+      driverXbox.x().whileTrue(
+        drivebase.centerModulesCommand()
+        );
 
       driverXbox.b().onTrue(new InstantCommand(() -> {
         try {
@@ -232,7 +234,7 @@ public class RobotContainer
     // drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
     // "swerve"));
 
-    return new PathPlannerAuto("autop");
+    return new PathPlannerAuto("2meterauto");
     
   }
 

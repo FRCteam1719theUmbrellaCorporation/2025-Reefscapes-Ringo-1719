@@ -802,10 +802,10 @@ PathPlannerPath path = new PathPlannerPath(
    *
    * @return {@link SwerveDrive}
    */
-  public SwerveDrive getSwerveDrive()
-  {
-    return swerveDrive;
+    public SwerveDrive getSwerveDrive() {
+      return swerveDrive;
+    }
   }
-  }
+
 
   

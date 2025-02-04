@@ -19,12 +19,26 @@ import swervelib.math.Matter;
 public final class Constants
 {
 
+  /*
+   * Hey
+   * If you're editing this, comment / uncomment these lines to make the robot faster
+   * Order is from top being slow to bottom being fast
+   * Make sure only one is defined!
+   */
+  
+  public static final double SPEED_LIMITER  = 0.25;
+  // public static final double SPEED_LIMITER  = 0.5;
+  // public static final double SPEED_LIMITER  = 0.75;
+
+
+  public static final double MAX_SPEED  = Units.feetToMeters(14.5*SPEED_LIMITER);
+
   public static final double ROBOT_MASS = (148 - 20.3) * 0.453592; // 32lbs * kg per pound
   public static final Matter CHASSIS    = new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), ROBOT_MASS);
   public static final double LOOP_TIME  = 0.13; //s, 20ms + 110ms sprk max velocity lag
   //IMB: We verified that this is the currect way to limit the max speed in YAGSL
-  public static final double SPEED_LIMITER  = 0.25;
-  public static final double MAX_SPEED  = Units.feetToMeters(14.5*SPEED_LIMITER);
+
+
   //This new max speed multiplied by the speed limiter should be the best max speed
   // Maximum speed of the robot in meters per second, used to limit acceleration.
 

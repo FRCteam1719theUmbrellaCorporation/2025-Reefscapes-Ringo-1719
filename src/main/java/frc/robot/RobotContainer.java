@@ -168,20 +168,33 @@ public class RobotContainer
       driverXbox.rightBumper().onTrue(Commands.none());
     } else
     {
-      // driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
-      driverXbox.b().onTrue(
-        new InstantCommand(() ->{
-          drivebase.OnTheFlyPathPlan().schedule();
+      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+      
+      driverXbox.x().onTrue(new InstantCommand(() -> {
+        LimeLightExtra.printTargetSpace(LimeLightExtra.backCam);
+      }));
 
+      driverXbox.b().onTrue(new InstantCommand(() -> {
+        try {
+          drivebase.allignTagWithOffset(LimeLightExtra.backCam,0, 0).schedule();
+
+        } catch (Exception e) {
+          System.out.println("Limelight not seen sorry brochacho");
         }
-      ));
+
+
+
+      }));
+
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
       driverXbox.leftBumper().onTrue(
         new InstantCommand(() -> {
-          System.out.println(drivebase.getPose().getX());
-          //Commands.runOnce(drivebase::lock, drivebase).repeatedly()
+          //double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("camerapose_targetspace").getDoubleArray(new double[6]);
+          //System.out.println("x,z"+camPose[0]+", "+camPose[2]);
+          //System.out.println("angle"+camPose[4]); //returns x and z from april tag to camera
+          //System.out.println("tx"+LimelightHelpers.getTargetPose_RobotSpace(LimeLightExtra.backCam)[4]);
+          
         })
        
       );
@@ -191,9 +204,13 @@ public class RobotContainer
         //   double angleToTurn = LimelightHelpers.getTX(null);
         // }
 
-        // System.out.println(LimelightHelpers.getTV(LimeLightExtra.backCam));
-      
-        drivebase.aimAtTarget(LimeLightExtra.backCam);
+        System.out.println(LimelightHelpers.getTV(LimeLightExtra.backCam));
+
+        double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("targetpose_cameraspace").getDoubleArray(new double[6]);
+        System.out.println("x"+camPose[0]);
+        //System.out.println("y"+camPose[1]);
+        System.out.println("z"+camPose[2]); //Boresight distance from camera to april tag
+        //drivebase.aimAtTarget(LimeLightExtra.backCam);
         // RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("")   
       }));
       
@@ -215,7 +232,7 @@ public class RobotContainer
     // drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
     // "swerve"));
 
-    return new PathPlannerAuto("Auto_1");
+    return new PathPlannerAuto("autop");
     
   }
 
@@ -224,7 +241,7 @@ public class RobotContainer
     drivebase.setMotorBrake(brake);
   }
   public void periodic(){
-    System.out.println(drivebase.getPose().getX() + "This is X");
-    System.out.println(drivebase.getPose().getY() + "This is Y");
+    //System.out.println(drivebase.getPose().getX() + "This is X");
+    //System.out.println(drivebase.getPose().getY() + "This is Y");
   }
 }

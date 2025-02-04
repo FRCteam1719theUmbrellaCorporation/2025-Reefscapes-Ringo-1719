@@ -12,8 +12,10 @@ import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
@@ -33,18 +35,27 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import frc.robot.Constants;
+import frc.robot.LimelightHelpers;
+import frc.robot.LimelightHelpers.PoseEstimate;
+import frc.robot.LimelightHelpers.RawFiducial;
+
 //import frc.robot.subsystems.swervedrive.Vision.Cameras;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.json.simple.parser.ParseException;
+
 //import org.photonvision.targeting.PhotonPipelineResult;
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
@@ -66,7 +77,7 @@ public class SwerveSubsystem extends SubsystemBase
   /**
    * AprilTag field layout.
    */
-  private final AprilTagFieldLayout aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
+  public final AprilTagFieldLayout aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
   /**
    * Enable vision odometry updates while driving.
    */
@@ -141,10 +152,13 @@ public class SwerveSubsystem extends SubsystemBase
   public void periodic()
   {
     // When vision is enabled we must manually update odometry in SwerveDrive
-    if (visionDriveTest)
+    if (LimelightHelpers.getTV(LimeLightExtra.frontCam))
     {
       swerveDrive.updateOdometry();
-//      vision.updatePoseEstimation(swerveDrive);
+      LimeLightExtra.updatePoseEstimation(swerveDrive);
+      // System.out.println(LimelightHelpers.toPose2D(LimelightHelpers.getTargetPose_RobotSpace(LimeLightExtra.backCam)));
+
+      
     }
   }
 
@@ -190,9 +204,9 @@ public class SwerveSubsystem extends SubsystemBase
           // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
           new PPHolonomicDriveController(
               // PPHolonomicController is the built in path following controller for holonomic drive trains
-              new PIDConstants(5.0, 0.0, 0.0),
+              new PIDConstants(0.024, 0.0, 0.0),
               // Translation PID constants
-              new PIDConstants(5.0, 0.0, 0.0)
+              new PIDConstants(0.0005, 0.0, 0.0)
               // Rotation PID constants
           ),
           config,
@@ -224,29 +238,37 @@ public class SwerveSubsystem extends SubsystemBase
     PathfindingCommand.warmupCommand().schedule();
   }
 
-//  /**
-//   * Aim the robot at the target returned by PhotonVision.
-//   *
-//   * @return A {@link Command} which will run the alignment.
-//   */
-//  public Command aimAtTarget(Cameras camera)
-//  {
-//
-//    return run(() -> {
-//      Optional<PhotonPipelineResult> resultO = camera.getBestResult();
-//      if (resultO.isPresent())
-//      {
-//        var result = resultO.get();
-//        if (result.hasTargets())
-//        {
-//          drive(getTargetSpeeds(0,
-//                                0,
-//                                Rotation2d.fromDegrees(result.getBestTarget()
-//                                                             .getYaw()))); // Not sure if this will work, more math may be required.
-//        }
-//      }
-//    });
-//  }
+ /**
+  * Aim the robot at the target returned by PhotonVision.
+  *
+  * @return A {@link Command} which will run the alignment.
+  */
+public Command aimAtTarget(String limeLightName)
+ {
+  System.out.println("x");
+
+   return run(() -> {
+    
+     Optional<RawFiducial> resultO = LimeLightExtra.getBestTag(limeLightName);
+
+     if (resultO.isPresent())
+     {
+
+      
+      RawFiducial result = resultO.get();
+
+      System.out.println(result.id);
+       if (result.id > 0)
+       {
+        System.out.println("tag id: " + result.id);
+
+         drive(getTargetSpeeds(0,
+                               0,
+                               Rotation2d.fromDegrees(result.txnc))); // Not sure if this will work, more math may be required.
+       }
+     }
+   });
+ }
 
   /**
    * Get the path follower with events.
@@ -270,7 +292,7 @@ public class SwerveSubsystem extends SubsystemBase
   {
 // Create the constraints to use while pathfinding
     PathConstraints constraints = new PathConstraints(
-        swerveDrive.getMaximumChassisVelocity(), 4.0,
+        swerveDrive.getMaximumChassisVelocity(), 1.0,
         swerveDrive.getMaximumChassisAngularVelocity(), Units.degreesToRadians(720));
 
 // Since AutoBuilder is configured, we can use it to build pathfinding commands
@@ -416,9 +438,9 @@ public class SwerveSubsystem extends SubsystemBase
     return run(() -> {
       // Make the robot move
       swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
-                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 0.8),
-                        Math.pow(angularRotationX.getAsDouble(), 3) * swerveDrive.getMaximumChassisAngularVelocity(),
+                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity() *0.4,
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()*0.4), 0.8),
+                        Math.pow(angularRotationX.getAsDouble()*0.4, 3) * swerveDrive.getMaximumChassisAngularVelocity(),
                         true,
                         false);
     });
@@ -657,6 +679,58 @@ public class SwerveSubsystem extends SubsystemBase
                                                         Constants.MAX_SPEED);
   }
 
+  
+  public Command OnTheFlyPathPlan(double xx, double yy, double angle)
+  {
+    Pose2d currentPos = getPose();
+    final double posx = currentPos.getX();
+    final double posy = currentPos.getY();
+      // Create a list of waypoints from poses. Each pose represents one waypoint.
+  // The rotation component of the pose should be the direction of travel. Do not use holonomic rotation.
+  List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+    currentPos,
+    new Pose2d(posx+xx, posy+yy, Rotation2d.fromDegrees(0))
+    //new Pose2d(posx-1, posy, Rotation2d.fromDegrees(0)),
+    //new Pose2d(posx, posy+1, Rotation2d.fromDegrees(0)),
+);
+
+PathConstraints constraints = new PathConstraints(3.0, 1.0, 2*Math.PI, 2*Math.PI); // The constraints for this path.
+// PathConstraints constraints = PathConstraints.unlimitedConstraints(12.0); // You can also use unlimited constraints, only limited by motor torque and nominal battery voltage
+
+// Create the path using the waypoints created above
+PathPlannerPath path = new PathPlannerPath(
+    waypoints,
+    constraints,
+    null, // The ideal starting state, this is only relevant for pre-planned paths, so can be null for on-the-fly paths.
+    new GoalEndState(0.0, Rotation2d.fromDegrees(angle)) // Goal end state. You can set a holonomic rotation here. If using a differential drivetrain, the rotation will have no effect. 
+);
+  return AutoBuilder.followPath(path);
+  }
+
+  
+  public Command allignTagWithOffset(String limelightName, double x, double z, double angleOffset) throws NoSuchElementException {
+    LimeLightExtra.updatePoseEstimation(swerveDrive);
+    //temp until side stuff is finished
+    int tagID = 1;
+
+    try {
+      double[] tagPose = LimeLightExtra.requestTagPos(limelightName).get();
+      if (tagPose == null) {
+        throw new NoSuchElementException();
+      }
+
+      return OnTheFlyPathPlan(tagPose[2] + x, tagPose[0] + z, tagPose[4] + angleOffset);
+
+    } catch (NoSuchElementException e) {
+      throw e;
+    }
+  }
+
+  //Overload without angle adjustment
+  public Command allignTagWithOffset(String limelightName, double x, double z) {
+    return allignTagWithOffset(limelightName, x, z, 0);
+  }
+
   /**
    * Gets the current field-relative velocity (x, y and omega) of the robot
    *
@@ -732,4 +806,6 @@ public class SwerveSubsystem extends SubsystemBase
   {
     return swerveDrive;
   }
-}
+  }
+
+  

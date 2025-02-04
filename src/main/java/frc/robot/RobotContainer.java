@@ -4,20 +4,31 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+
+import frc.robot.LimelightHelpers;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.LimelightHelpers.RawFiducial;
 import frc.robot.commands.swervedrive.drivebase.AbsoluteDriveAdv;
+import frc.robot.subsystems.swervedrive.LimeLightExtra;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
 import swervelib.SwerveInputStream;
@@ -31,9 +42,9 @@ public class RobotContainer
 {
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
-  final         CommandXboxController driverXbox = new CommandXboxController(0);
+  final CommandXboxController driverXbox = new CommandXboxController(0);
   // The robot's subsystems and commands are defined here...
-  private final SwerveSubsystem       drivebase  = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
+  private SwerveSubsystem drivebase  = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
                                                                                 "swerve"));
   // Applies deadbands and inverts controls because joysticks
   // are back-right positive while robot
@@ -118,10 +129,12 @@ public class RobotContainer
    */
   public RobotContainer()
   {
+    NamedCommands.registerCommand("center", drivebase.centerModulesCommand().withTimeout(0.5));
     // Configure the trigger bindings
     configureBindings();
     DriverStation.silenceJoystickConnectionWarning(true);
-    NamedCommands.registerCommand("test", Commands.print("I EXIST"));
+    
+    //NamedCommands.registerCommand("test", Commands.print("I EXIST"));
   }
 
   /**
@@ -138,6 +151,7 @@ public class RobotContainer
                                 driveFieldOrientedAnglularVelocity :
                                 driveFieldOrientedAnglularVelocitySim);
 
+    // drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
     if (Robot.isSimulation())
     {
       driverXbox.start().onTrue(Commands.runOnce(() -> drivebase.resetOdometry(new Pose2d(3, 3, new Rotation2d()))));
@@ -157,16 +171,56 @@ public class RobotContainer
     } else
     {
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
-      driverXbox.b().whileTrue(
-          drivebase.driveToPose(
-              new Pose2d(new Translation2d(4, 4), Rotation2d.fromDegrees(0)))
-                              );
+      
+      driverXbox.x().whileTrue(
+        drivebase.centerModulesCommand()
+        );
+
+      driverXbox.b().onTrue(new InstantCommand(() -> {
+        try {
+          drivebase.allignTagWithOffset(LimeLightExtra.backCam,0, 0).schedule();
+
+        } catch (Exception e) {
+          System.out.println("Limelight not seen sorry brochacho");
+        }
+
+
+
+      }));
+
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.rightBumper().onTrue(Commands.none());
+      driverXbox.leftBumper().onTrue(
+        new InstantCommand(() -> {
+          //double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("camerapose_targetspace").getDoubleArray(new double[6]);
+          //System.out.println("x,z"+camPose[0]+", "+camPose[2]);
+          //System.out.println("angle"+camPose[4]); //returns x and z from april tag to camera
+          //System.out.println("tx"+LimelightHelpers.getTargetPose_RobotSpace(LimeLightExtra.backCam)[4]);
+          
+        })
+       
+      );
+      driverXbox.a().onTrue(new InstantCommand(()->{
+        // if (LimelightHelpers.getTV("null")) {
+        //   System.out.println(drivebase.aprilTagFieldLayout);
+        //   double angleToTurn = LimelightHelpers.getTX(null);
+        // }
+
+        System.out.println(LimelightHelpers.getTV(LimeLightExtra.backCam));
+
+        double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("targetpose_cameraspace").getDoubleArray(new double[6]);
+        System.out.println("x"+camPose[0]);
+        //System.out.println("y"+camPose[1]);
+        System.out.println("z"+camPose[2]); //Boresight distance from camera to april tag
+        //drivebase.aimAtTarget(LimeLightExtra.backCam);
+        // RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("")   
+      }));
+      
+      driverXbox.y().onTrue(
+        Commands.runOnce(drivebase::zeroGyro)
+      );
     }
+    
 
   }
 
@@ -177,12 +231,19 @@ public class RobotContainer
    */
   public Command getAutonomousCommand()
   {
-    // An example command will be run in autonomous
-    return drivebase.getAutonomousCommand("New Auto");
+    // drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
+    // "swerve"));
+
+    return new PathPlannerAuto("2meterauto");
+    
   }
 
   public void setMotorBrake(boolean brake)
   {
     drivebase.setMotorBrake(brake);
+  }
+  public void periodic(){
+    //System.out.println(drivebase.getPose().getX() + "This is X");
+    //System.out.println(drivebase.getPose().getY() + "This is Y");
   }
 }

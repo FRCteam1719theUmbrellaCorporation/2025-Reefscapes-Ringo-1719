@@ -165,15 +165,21 @@ public class RobotContainer
       driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.back().whileTrue(drivebase.centerModulesCommand());
+      driverXbox.a().onTrue(drivebase.centerModulesCommand());
       driverXbox.leftBumper().onTrue(Commands.none());
       driverXbox.rightBumper().onTrue(Commands.none());
     } else
     {
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+      driverXbox.a().onTrue(
+        new InstantCommand(()-> {
+          drivebase.centerModulesCommand().withTimeout(0.5).schedule();
+        }));
       
-      driverXbox.x().whileTrue(
-        drivebase.centerModulesCommand()
+      driverXbox.x().onTrue(
+        
+        new InstantCommand(()-> {
+          AutoBuilder.buildAuto("pathdaneil").schedule();
+        })
         );
 
       driverXbox.b().onTrue(new InstantCommand(() -> {
@@ -189,6 +195,7 @@ public class RobotContainer
       }));
 
       driverXbox.start().whileTrue(Commands.none());
+      //Back is supposed to be the command to recenter the wheels but that function is being changed to the key bind "a"
       driverXbox.back().whileTrue(Commands.none());
       driverXbox.leftBumper().onTrue(
         new InstantCommand(() -> {
@@ -200,21 +207,8 @@ public class RobotContainer
         })
        
       );
-      driverXbox.a().onTrue(new InstantCommand(()->{
-        // if (LimelightHelpers.getTV("null")) {
-        //   System.out.println(drivebase.aprilTagFieldLayout);
-        //   double angleToTurn = LimelightHelpers.getTX(null);
-        // }
+      
 
-        System.out.println(LimelightHelpers.getTV(LimeLightExtra.backCam));
-
-        double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("targetpose_cameraspace").getDoubleArray(new double[6]);
-        System.out.println("x"+camPose[0]);
-        //System.out.println("y"+camPose[1]);
-        System.out.println("z"+camPose[2]); //Boresight distance from camera to april tag
-        //drivebase.aimAtTarget(LimeLightExtra.backCam);
-        // RawFiducial[] gFiducials = LimelightHelpers.getRawFiducials("")   
-      }));
       
       driverXbox.y().onTrue(
         Commands.runOnce(drivebase::zeroGyro)
@@ -234,7 +228,7 @@ public class RobotContainer
     // drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
     // "swerve"));
 
-    return new PathPlannerAuto("2meterauto");
+    return new PathPlannerAuto("pathdaneil");
     
   }
 

@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -15,6 +16,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.LimelightHelpers;
+import frc.robot.LimelightHelpers.RawFiducial;
+import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class AutoMoveToTag extends Command {
@@ -32,7 +36,7 @@ public class AutoMoveToTag extends Command {
 
   //They added the line private final PhotonCamer photonCamera but we use limelight so change somehow
   //These next to lines they wrtoe specific to them
-  private final DrivetrainSubsystem drivetrainSubsystem;
+  private final SwerveSubsystem drivetrainSubsystem;
   private final Supplier<Pose2d> poseProvider;
 
   //In the place of a, b, and c put PIDS
@@ -41,14 +45,17 @@ public class AutoMoveToTag extends Command {
   private final ProfiledPIDController omegaController = new ProfiledPIDController(a,b ,c, OMEGA_CONSTRAINTS);
 
   //They added this line for using Photon
-  private PhotonTrackedTarget lastTarget;
+  private Integer lastTarget;
+
+  private final String Limelight_ID;
+  //private final 
 
   //they are using their specs for this
-  public ChaseTagCommand(
-        PhotonCamera photonCamera,
-        DrivetrainSubsystem drivetrainSubsystem,
+  public AutoMoveToTag(
+        String Limelight_ID,
+        SwerveSubsystem drivetrainSubsystem,
         Supplier<Pose2d> poseProvider){
-    this.photonCamera = photonCamera;
+    this.Limelight_ID = Limelight_ID;
     this.drivetrainSubsystem = drivetrainSubsystem;
     this.poseProvider = poseProvider;
     
@@ -71,7 +78,7 @@ public class AutoMoveToTag extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    lastTarget = null;
+    // lastTarget = null;
     var robotPose = poseProvider.get();
     omegaController.reset(robotPose.getRotation().getRadians());
     xController.reset(robotPose.getX());
@@ -87,19 +94,27 @@ public class AutoMoveToTag extends Command {
         new Pose3d(
             robotPose2d.getX(),
             robotPose2d.getY(),
-            z:0.0,
+            0.0,
             new Rotation3d(0.0,0.0,robotPose2d.getRotation().getRadians())
             //Ian Borden doesn't know how to end the line above as the video didn't show the full line
-            )
-    
-    var photonRes = photonCamera.getLatestResult();
-    if (photonRes.hasTargets()){
-      var targetOpt = photonRes.getTargets().stream()
-          .filter(t -> t.getFiducialId()==TAG_TO_CHASE)
-          .filter(t -> !t.equals(lastTarget) && t.getPoseAmbiguity() <=0.2 && t.getPose)
-          //the line above is incomplete as the full line was not shown in the video
-          .findFirst();
-      if(targetOpt.isPresent()){
+            );
+    //find out what getlatestresult is 
+    RawFiducial[] limeLightOutput = LimelightHelpers.getRawFiducials(Limelight_ID);
+    if (limeLightOutput.length != 0){
+      // var targetOpt = photonRes.getTargets().stream()
+      //     .filter(t -> t.getFiducialId()==TAG_TO_CHASE)
+      //     .filter(t -> !t.equals(lastTarget) && t.getPoseAmbiguity() <=0.2 && t.getPose)
+      //     //the line above is incomplete as the full line was not shown in the video
+      //     .findFirst();
+      int target;
+      boolean isPresent = false;
+      for (RawFiducial x: limeLightOutput) {
+        if (x.id == TAG_TO_CHASE && x.ambiguity <= 0.2 && x.id != lastTarget) {
+          isPresent = true;
+          break;
+        }
+      }
+      if(isPresent){
         var target = targetOpt.get();
         lastTarget = target;
 

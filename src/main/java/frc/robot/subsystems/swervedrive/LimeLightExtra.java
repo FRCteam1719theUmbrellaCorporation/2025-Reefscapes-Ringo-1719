@@ -59,7 +59,7 @@ public class LimeLightExtra {
             doRejectUpdate = true;
             }
         }
-        if(mt1.tagCount == 0)
+        if(mt1.tagCount == 0 || mt1 == null)
         {
             doRejectUpdate = true;
         }

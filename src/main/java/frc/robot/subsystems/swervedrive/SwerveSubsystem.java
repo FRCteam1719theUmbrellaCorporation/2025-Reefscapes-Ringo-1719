@@ -714,7 +714,7 @@ PathPlannerPath path = new PathPlannerPath(
     int tagID = 1;
 
     try {
-      double[] tagPose = LimeLightExtra.requestTagPos(limelightName).get\();
+      double[] tagPose = LimeLightExtra.requestTagPos(limelightName).get();
       if (tagPose == null) {
         throw new NoSuchElementException();
       }
@@ -730,6 +730,11 @@ PathPlannerPath path = new PathPlannerPath(
   public Command allignTagWithOffset(String limelightName, double x, double z) {
     return allignTagWithOffset(limelightName, x, z, 0);
   }
+  // public void stop() {
+  //   // intakeMotor.set(0);
+  // }
+
+
 
   /**
    * Gets the current field-relative velocity (x, y and omega) of the robot

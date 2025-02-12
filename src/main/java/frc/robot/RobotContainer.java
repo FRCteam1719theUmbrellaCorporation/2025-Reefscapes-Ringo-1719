@@ -28,9 +28,12 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.LimelightHelpers.RawFiducial;
 import frc.robot.commands.swervedrive.drivebase.AbsoluteDriveAdv;
+import frc.robot.commands.swervedrive.drivebase.AutoMoveToTag;
 import frc.robot.subsystems.swervedrive.LimeLightExtra;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
+import java.util.function.Supplier;
+
 import swervelib.SwerveInputStream;
 
 /**
@@ -148,7 +151,7 @@ public class RobotContainer
   {
     // (Condition) ? Return-On-True : Return-on-False
     drivebase.setDefaultCommand(!RobotBase.isSimulation() ?
-                                driveFieldOrientedAnglularVelocity :
+                                new AutoMoveToTag(LimeLightExtra.backCam, drivebase) :
                                 driveFieldOrientedAnglularVelocitySim);
 
     // drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));

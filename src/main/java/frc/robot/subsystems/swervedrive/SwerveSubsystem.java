@@ -730,9 +730,11 @@ PathPlannerPath path = new PathPlannerPath(
   public Command allignTagWithOffset(String limelightName, double x, double z) {
     return allignTagWithOffset(limelightName, x, z, 0);
   }
-  // public void stop() {
-  //   // intakeMotor.set(0);
-  // }
+  
+  public void stop() {
+    //intakeMotor.set(0);
+    this.lock();
+  }
 
 
 

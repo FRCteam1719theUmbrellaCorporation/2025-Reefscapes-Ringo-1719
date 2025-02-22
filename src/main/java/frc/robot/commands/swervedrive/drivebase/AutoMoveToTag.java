@@ -27,7 +27,7 @@ public class AutoMoveToTag extends Command {
   private final static TrapezoidProfile.Constraints OMEGA_CONSTRAINTS = new TrapezoidProfile.Constraints(8, 8);
 
   //This was the tag number in the video. Change later
-  private static final int TAG_TO_CHASE = 2;
+  private static final int TAG_TO_CHASE = 1;
   private static final Transform3d TAG_TO_GOAL = 
       new Transform3d(
         //This means to go 1.5 units directly infront of the april tag and rotated by 180 degrees
@@ -133,12 +133,15 @@ public class AutoMoveToTag extends Command {
         yController.setGoal(goalPose.getY());
         omegaController.setGoal(goalPose.getRotation().getRadians());
       }
+      else{
+        lastTarget = null;
+      }
       
 
     }
 
     if (lastTarget == null){
-      // drivetrainSubsystem.stop();
+      drivetrainSubsystem.stop();
     } else{
       var xSpeed = xController.calculate(robotPose.getX());
       if(xController.atGoal()){

@@ -25,6 +25,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -54,6 +55,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+
+import org.dyn4j.geometry.Rotation;
 import org.json.simple.parser.ParseException;
 
 //import org.photonvision.targeting.PhotonPipelineResult;
@@ -436,10 +439,11 @@ public Command aimAtTarget(String limeLightName)
   public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angularRotationX)
   {
     return run(() -> {
+      double gyroangle = getYaw().getDegrees()>-90?getPitch().getDegrees():180-getPitch().getDegrees();//returns values from -90 to 270
       // Make the robot move
       swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
-                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity() *0.4,
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()*0.4), 0.8),
+                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity()  * (gyroangle<90?-1:1),
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity() * (gyroangle<90?-1:1)), 0.8),
                         Math.pow(angularRotationX.getAsDouble()*0.4, 3) * swerveDrive.getMaximumChassisAngularVelocity(),
                         true,
                         false);
@@ -794,6 +798,19 @@ PathPlannerPath path = new PathPlannerPath(
   public Rotation2d getPitch()
   {
     return swerveDrive.getPitch();
+  }
+
+  public Rotation2d getYaw()
+  {
+    return swerveDrive.getYaw();
+  }
+  public Rotation2d getRoll()
+  {
+    return swerveDrive.getRoll();
+  }
+  public Rotation3d getRot()
+  {
+    return swerveDrive.getGyroRotation3d();
   }
 
   /**

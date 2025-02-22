@@ -150,11 +150,15 @@ public class RobotContainer
   private void configureBindings()
   {
     // (Condition) ? Return-On-True : Return-on-False
-    drivebase.setDefaultCommand(!RobotBase.isSimulation() ?
-                                new AutoMoveToTag(LimeLightExtra.backCam, drivebase) :
-                                driveFieldOrientedAnglularVelocitySim);
 
-    // drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
+    // drivebase.setDefaultCommand(!RobotBase.isSimulation() ?
+                                // new AutoMoveToTag(LimeLightExtra.backCam, drivebase) :
+                                // driveFieldOrientedAnglularVelocitySim);
+
+    drivebase.setDefaultCommand(!RobotBase.isSimulation() ?
+                              driveFieldOrientedAnglularVelocity :
+                              driveFieldOrientedAnglularVelocitySim);
+    //drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
     if (Robot.isSimulation())
     {
       driverXbox.start().onTrue(Commands.runOnce(() -> drivebase.resetOdometry(new Pose2d(3, 3, new Rotation2d()))));
@@ -163,7 +167,7 @@ public class RobotContainer
     }
     if (DriverStation.isTest())
     {
-      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overrides drive command above!
+      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overriwedes drive command above!
 
       driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
@@ -186,6 +190,7 @@ public class RobotContainer
         );
 
       driverXbox.b().onTrue(new InstantCommand(() -> {
+        drivebase.zeroGyro();
         try {
           drivebase.allignTagWithOffset(LimeLightExtra.backCam,0, 0).schedule();
 
@@ -200,21 +205,19 @@ public class RobotContainer
       driverXbox.start().whileTrue(Commands.none());
       //Back is supposed to be the command to recenter the wheels but that function is being changed to the key bind "a"
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().onTrue(
-        new InstantCommand(() -> {
-          //double[] camPose = NetworkTableInstance.getDefault().getTable("limelight-back").getEntry("camerapose_targetspace").getDoubleArray(new double[6]);
-          //System.out.println("x,z"+camPose[0]+", "+camPose[2]);
-          //System.out.println("angle"+camPose[4]); //returns x and z from april tag to camera
-          //System.out.println("tx"+LimelightHelpers.getTargetPose_RobotSpace(LimeLightExtra.backCam)[4]);
-          
-        })
-       
-      );
+      driverXbox.leftBumper().onTrue(Commands.none());
       
 
       
       driverXbox.y().onTrue(
-        Commands.runOnce(drivebase::zeroGyro)
+        new InstantCommand (()->{//drivebase.zeroGyro();
+          System.out.println("Pitch "+drivebase.getPitch());
+          System.out.println("Yaw "+drivebase.getYaw());
+          System.out.println("Roll "+drivebase.getRoll());
+
+          System.out.println(drivebase.getYaw().getDegrees()>-90?drivebase.getPitch().getDegrees():180-drivebase.getPitch().getDegrees());
+        }
+        )
       );
     }
     

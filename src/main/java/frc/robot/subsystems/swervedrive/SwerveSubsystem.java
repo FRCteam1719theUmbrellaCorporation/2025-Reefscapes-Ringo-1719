@@ -409,11 +409,12 @@ public Command aimAtTarget(String limeLightName)
    * @param speedInMetersPerSecond the speed at which to drive in meters per second
    * @return a Command that drives the swerve drive to a specific distance at a given speed
    */
-  public Command driveToDistanceCommand(double distanceInMeters, double speedInMetersPerSecond)
+  public Command driveToDistanceCommand(double distanceInMetersX,double distanceInMetersY, double speedInMetersPerSecond)
   {
-    return run(() -> drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0)))
+    return run(() -> drive(new ChassisSpeeds(speedInMetersPerSecond, distanceInMetersX, distanceInMetersY)))
         .until(() -> swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)) >
-                     distanceInMeters);
+                     distanceInMetersX && swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)) >
+                     distanceInMetersY);
   }
 
   /**
@@ -684,7 +685,7 @@ public Command aimAtTarget(String limeLightName)
   }
 
   
-  public Command OnTheFlyPathPlan(double xx, double yy, double angle)
+  public Command OnTheFlyPathPlan(double x, double y,double angle)
   {
     Pose2d currentPos = getPose();
     final double posx = currentPos.getX();
@@ -693,7 +694,7 @@ public Command aimAtTarget(String limeLightName)
   // The rotation component of the pose should be the direction of travel. Do not use holonomic rotation.
   List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
     currentPos,
-    new Pose2d(posx+xx, posy+yy, Rotation2d.fromDegrees(0))
+    new Pose2d(posx+x, posy+y, Rotation2d.fromDegrees(0))
     //new Pose2d(posx-1, posy, Rotation2d.fromDegrees(0)),
     //new Pose2d(posx, posy+1, Rotation2d.fromDegrees(0)),
 );
@@ -715,7 +716,7 @@ PathPlannerPath path = new PathPlannerPath(
   public Command allignTagWithOffset(String limelightName, double x, double z, double angleOffset) throws NoSuchElementException {
     LimeLightExtra.updatePoseEstimation(swerveDrive);
     //temp until side stuff is finished
-    int tagID = 1;
+    int tagID = 2;
 
     try {
       double[] tagPose = LimeLightExtra.requestTagPos(limelightName).get();

@@ -16,6 +16,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.LimelightHelpers;
 import frc.robot.LimelightHelpers.RawFiducial;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
@@ -27,7 +28,7 @@ public class AutoMoveToTag extends Command {
   private final static TrapezoidProfile.Constraints OMEGA_CONSTRAINTS = new TrapezoidProfile.Constraints(8, 8);
 
   //This was the tag number in the video. Change later
-  private static final int TAG_TO_CHASE = 1;
+  private static final int TAG_TO_CHASE = 2;
   private static final Transform3d TAG_TO_GOAL = 
       new Transform3d(
         //This means to go 1.5 units directly infront of the april tag and rotated by 180 degrees

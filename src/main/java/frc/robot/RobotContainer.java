@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
@@ -32,8 +34,9 @@ import frc.robot.commands.swervedrive.drivebase.AutoMoveToTag;
 import frc.robot.subsystems.swervedrive.LimeLightExtra;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-
+import frc.robot.commands.swervedrive.drivebase.AutoMoveToTag;
 import swervelib.SwerveInputStream;
 
 /**
@@ -166,12 +169,12 @@ public class RobotContainer
     }
     if (DriverStation.isTest())
     {
-      drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
+     // drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
 //drivebase.setDefaultCommand(Commands.runOnce(drivebase::AutoMoveToTag,drivebase).repeatedly());
-   // drivebase.setDefaultCommand(new AutoMoveToTag(backCam,drivebase));
+   //drivebase.setDefaultCommand(new AutoMoveToTag(LimeLightExtra.backCam,drivebase));
 
       driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
+     // driverXbox.y().onTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.a().onTrue(drivebase.centerModulesCommand());
       driverXbox.leftBumper().onTrue(Commands.none());
@@ -191,7 +194,10 @@ public class RobotContainer
         );
 
       driverXbox.b().onTrue(new InstantCommand(() -> {
-        drivebase.zeroGyro();
+        //drivebase.zeroGyro();
+        drivebase.centerModulesCommand();
+        new WaitCommand(1);
+
         try {
           drivebase.allignTagWithOffset(LimeLightExtra.backCam,0, 0).schedule();
 
@@ -206,10 +212,15 @@ public class RobotContainer
       driverXbox.start().whileTrue(Commands.none());
       //Back is supposed to be the command to recenter the wheels but that function is being changed to the key bind "a"
       driverXbox.back().whileTrue(Commands.none());
-      driverXbox.leftBumper().onTrue(Commands.none());
-      
+
+      //this command makes the robot move x meters at y meters per second
+      //it is responsible for making Ben happy as the robot is following a move command
+      driverXbox.leftBumper().onTrue(
+      drivebase.driveToDistanceCommand(1.,5.,1.)
+      );
 
       
+
       driverXbox.y().onTrue(
         new InstantCommand (()->{//drivebase.zeroGyro();
           System.out.println("Pitch "+drivebase.getPitch());

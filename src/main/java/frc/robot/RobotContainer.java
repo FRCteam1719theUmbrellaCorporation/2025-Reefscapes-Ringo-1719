@@ -158,7 +158,6 @@ public class RobotContainer
     drivebase.setDefaultCommand(!RobotBase.isSimulation() ?
                               driveFieldOrientedAnglularVelocity :
                               driveFieldOrientedAnglularVelocitySim);
-    //drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
     if (Robot.isSimulation())
     {
       driverXbox.start().onTrue(Commands.runOnce(() -> drivebase.resetOdometry(new Pose2d(3, 3, new Rotation2d()))));
@@ -167,7 +166,9 @@ public class RobotContainer
     }
     if (DriverStation.isTest())
     {
-      drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overriwedes drive command above!
+      drivebase.setDefaultCommand(drivebase.aimAtTarget(LimeLightExtra.backCam));
+//drivebase.setDefaultCommand(Commands.runOnce(drivebase::AutoMoveToTag,drivebase).repeatedly());
+   // drivebase.setDefaultCommand(new AutoMoveToTag(backCam,drivebase));
 
       driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));

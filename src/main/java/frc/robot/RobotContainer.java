@@ -15,6 +15,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -129,6 +130,13 @@ public class RobotContainer
    */
   public RobotContainer()
   {
+
+        new LimeLightExtra(drivebase);
+
+    Rotation3d sd = drivebase.getSwerveDrive().imuReadingCache.getValue();
+    LimelightHelpers.SetRobotOrientation(null, drivebase.getHeading().getDegrees(), 0, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode(null, 1);
+    
     NamedCommands.registerCommand("center", drivebase.centerModulesCommand().withTimeout(0.5));
     // Configure the trigger bindings
     configureBindings();

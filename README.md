@@ -1,3 +1,5 @@
+<h2> <mark> THIS REPOSITORY HAS BEEN ARCHIVED </mark> </h2>
+
 # 2025 Ringo
 
 This is an updated codebase for our robot, Ringo, to test out limelight features and other stuff throughout the 2025 season
